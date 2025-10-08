@@ -1,14 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
 import {
   ContactShadows,
   Environment,
   Billboard, // <- faces camera automatically
-  Text,
+  Html,
   useTexture,
 } from "@react-three/drei";
+import { motion, useReducedMotion } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
@@ -108,12 +108,14 @@ function MapPin({
   baseColor,
   draggingRef,
   onNavigate,
+  onHoverChange,
 }: {
   item: MenuItem;
   radius: number; // distance from center
   baseColor: string; // pin body color
   draggingRef: React.MutableRefObject<boolean>;
   onNavigate: (href: string) => void;
+  onHoverChange: (hovered: boolean) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const pinRef = useRef<THREE.Group>(null!);
@@ -125,31 +127,38 @@ function MapPin({
   useFrame(({ clock }) => {
     if (!pinRef.current) return;
     const t = clock.getElapsedTime();
-    const s = hovered ? 1.1 : 1.0;
+    const s = hovered ? 1.08 : 1.0;
     pinRef.current.scale.setScalar(s + Math.sin(t * 2.2) * 0.02);
   });
 
+  const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setHovered(true);
+    onHoverChange(true);
+    document.body.style.cursor = "pointer";
+  };
+
+  const handlePointerOut = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setHovered(false);
+    onHoverChange(false);
+    document.body.style.cursor = "";
+  };
+
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    if (!draggingRef.current) onNavigate(item.href);
+  };
   return (
     <group position={pos}>
       {/* Make the whole pin always face the camera for legibility */}
       <Billboard follow={true} lockX={false} lockY={false} lockZ={false}>
         <group
           ref={pinRef}
-          onPointerOver={(e) => {
-            e.stopPropagation();
-            setHovered(true);
-            document.body.style.cursor = "pointer";
-          }}
-          onPointerOut={(e) => {
-            e.stopPropagation();
-            setHovered(false);
-            document.body.style.cursor = "auto";
-          }}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!draggingRef.current) onNavigate(item.href);
-          }}
+          onClick={handleClick}
         >
           {/* Pin head (sphere) */}
           <mesh position={[0, 0.16, 0]}>
@@ -159,7 +168,7 @@ function MapPin({
               roughness={0.35}
               metalness={0.1}
               emissive={hovered ? baseColor : "black"}
-              emissiveIntensity={hovered ? 0.3 : 0}
+              emissiveIntensity={hovered ? 0.35 : 0}
             />
           </mesh>
 
@@ -174,17 +183,25 @@ function MapPin({
           </mesh>
 
           {/* Label under the pin */}
-          <Text
-            position={[0, -0.28, 0]}
-            fontSize={0.18}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-            outlineWidth={0.02}
-            outlineColor="black"
+          <Html
+            transform
+            distanceFactor={8}
+            position={[0, -0.32, 0]}
+            style={{ pointerEvents: "none" }}
           >
-            {item.label}
-          </Text>
+            <motion.span
+              initial={false}
+              animate={{
+                opacity: hovered ? 1 : 0,
+                y: hovered ? 0 : 12,
+                filter: hovered ? "blur(0px)" : "blur(8px)",
+              }}
+              transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+              className="rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white shadow-lg backdrop-blur"
+            >
+              {item.label}
+            </motion.span>
+          </Html>
         </group>
       </Billboard>
     </group>
@@ -193,30 +210,92 @@ function MapPin({
 
 /* ----------------------- Inertia driver (inside R3F) ---------------------- */
 
-function InertiaDriver({
+function RotationDriver({
   groupRef,
   draggingRef,
-  velRef,
+  paused,
+  velocity,
+  targetRotation,
+  idleTimer,
+  hoveredPin,
 }: {
   groupRef: React.RefObject<THREE.Group>;
   draggingRef: React.MutableRefObject<boolean>;
-  velRef: React.MutableRefObject<{ x: number; y: number }>;
+  paused: boolean;
+  velocity: React.MutableRefObject<{ x: number; y: number }>;
+  targetRotation: React.MutableRefObject<{ x: number; y: number }>;
+  idleTimer: React.MutableRefObject<number>;
+  hoveredPin: React.MutableRefObject<boolean>;
 }) {
-  useFrame(() => {
-    if (!draggingRef.current && groupRef.current) {
-      velRef.current.x *= 0.94;
-      velRef.current.y *= 0.94;
+  useFrame((_, delta) => {
+    if (!groupRef.current || paused) return;
 
-      if (Math.abs(velRef.current.x) < 0.0005) velRef.current.x = 0;
-      if (Math.abs(velRef.current.y) < 0.0005) velRef.current.y = 0;
-
-      if (velRef.current.x || velRef.current.y) {
-        groupRef.current.rotation.y += velRef.current.x;
-        const nextX = groupRef.current.rotation.x + velRef.current.y;
-        groupRef.current.rotation.x = THREE.MathUtils.clamp(nextX, -0.9, 0.9);
-      }
+    if (hoveredPin.current) {
+      velocity.current.x = 0;
+      velocity.current.y = 0;
+      idleTimer.current = 0;
+      targetRotation.current.x = groupRef.current.rotation.x;
+      targetRotation.current.y = groupRef.current.rotation.y;
+      return;
     }
+
+    if (!draggingRef.current) {
+      velocity.current.x = THREE.MathUtils.damp(
+        velocity.current.x,
+        0,
+        3.4,
+        delta
+      );
+      velocity.current.y = THREE.MathUtils.damp(
+        velocity.current.y,
+        0,
+        3.4,
+        delta
+      );
+
+      targetRotation.current.y += velocity.current.x * delta;
+      targetRotation.current.x = THREE.MathUtils.clamp(
+        targetRotation.current.x + velocity.current.y * delta,
+        -0.9,
+        0.9
+      );
+
+      const nearlyStill =
+        Math.abs(velocity.current.x) < 0.01 &&
+        Math.abs(velocity.current.y) < 0.01;
+
+      if (nearlyStill) {
+        idleTimer.current += delta;
+        targetRotation.current.y +=
+          Math.sin(idleTimer.current * 0.35) * delta * 0.35;
+        targetRotation.current.x = THREE.MathUtils.clamp(
+          targetRotation.current.x +
+            Math.cos(idleTimer.current * 0.5) * delta * 0.18,
+          -0.6,
+          0.6
+        );
+      } else {
+        idleTimer.current = 0;
+      }
+    } else {
+      idleTimer.current = 0;
+    }
+
+    const { rotation } = groupRef.current;
+    rotation.y = THREE.MathUtils.damp(
+      rotation.y,
+      targetRotation.current.y,
+      6,
+      delta
+    );
+    rotation.x = THREE.MathUtils.damp(
+      rotation.x,
+      targetRotation.current.x,
+      6,
+      delta
+    );
   });
+
   return null;
 }
 
@@ -233,17 +312,18 @@ export default function ThreeBlob({
   imageSrc?: string;
   scale?: number;
 }) {
-  const reduced =
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const prefersReducedMotion = useReducedMotion();
 
   const router = useRouter();
 
   // Rotation state
   const groupRef = useRef<THREE.Group>(null!);
   const dragging = useRef(false);
-  const last = useRef<{ x: number; y: number } | null>(null);
-  const vel = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const last = useRef<{ x: number; y: number; time: number } | null>(null);
+  const velocity = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const targetRotation = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const idleTimer = useRef(0);
+  const hoveredPin = useRef(false);
 
   const [isGrabbing, setIsGrabbing] = useState(false);
 
@@ -267,34 +347,77 @@ export default function ThreeBlob({
     []
   );
 
-  const onPointerDown = (e: any) => {
+  const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     dragging.current = true;
     setIsGrabbing(true);
-    last.current = { x: e.clientX, y: e.clientY };
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+
+    last.current = {
+      x: e.clientX,
+      y: e.clientY,
+      time: e.nativeEvent.timeStamp,
+    };
+    velocity.current = { x: 0, y: 0 };
+    if (groupRef.current) {
+      targetRotation.current.x = groupRef.current.rotation.x;
+      targetRotation.current.y = groupRef.current.rotation.y;
+    }
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
   };
-  const onPointerMove = (e: any) => {
+  const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
     if (!dragging.current || !groupRef.current || !last.current) return;
     const dx = e.clientX - last.current.x;
     const dy = e.clientY - last.current.y;
-    const sx = dx * 0.005; // yaw
-    const sy = dy * 0.005; // pitch
-    groupRef.current.rotation.y += sx;
-    const nextX = groupRef.current.rotation.x + sy;
-    groupRef.current.rotation.x = THREE.MathUtils.clamp(nextX, -0.9, 0.9);
-    vel.current.x = sx;
-    vel.current.y = sy;
-    last.current = { x: e.clientX, y: e.clientY };
+    const dt = Math.max(
+      (e.nativeEvent.timeStamp - last.current.time) / 1000,
+      0.016
+    );
+    const yawDelta = dx * 0.0025;
+    const pitchDelta = dy * 0.0025;
+
+    targetRotation.current.y += yawDelta;
+    targetRotation.current.x = THREE.MathUtils.clamp(
+      targetRotation.current.x + pitchDelta,
+      -0.9,
+      0.9
+    );
+
+    velocity.current.x = yawDelta / dt;
+    velocity.current.y = pitchDelta / dt;
+
+    groupRef.current.rotation.y = targetRotation.current.y;
+    groupRef.current.rotation.x = targetRotation.current.x;
+
+    last.current = {
+      x: e.clientX,
+      y: e.clientY,
+      time: e.nativeEvent.timeStamp,
+    };
   };
-  const onPointerUp = (e: any) => {
+  const onPointerUp = (e: ThreeEvent<PointerEvent>) => {
     dragging.current = false;
     setIsGrabbing(false);
     last.current = null;
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    velocity.current.x = 0;
+    velocity.current.y = 0;
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+  };
+  const handlePinHoverChange = (hovering: boolean) => {
+    hoveredPin.current = hovering;
+    if (hovering) {
+      dragging.current = false;
+      setIsGrabbing(false);
+      last.current = null;
+      velocity.current.x = 0;
+      velocity.current.y = 0;
+      if (groupRef.current) {
+        targetRotation.current.x = groupRef.current.rotation.x;
+        targetRotation.current.y = groupRef.current.rotation.y;
+      }
+    }
   };
 
   const onNavigate = (href: string) => router.push(href);
-  const paused = reduced;
+  const paused = prefersReducedMotion;
 
   // Theme-aware pin color
   const pinColor = dark ? "#8ab4ff" : "#7aa2ff";
@@ -308,13 +431,22 @@ export default function ThreeBlob({
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
         camera={{ position: [0, 0, 4.5], fov: 45 }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
+        onPointerDown={(e) =>
+          onPointerDown(e as unknown as ThreeEvent<PointerEvent>)
+        }
+        onPointerMove={(e) =>
+          onPointerMove(e as unknown as ThreeEvent<PointerEvent>)
+        }
+        onPointerUp={(e) =>
+          onPointerUp(e as unknown as ThreeEvent<PointerEvent>)
+        }
         onPointerLeave={() => {
           dragging.current = false;
           setIsGrabbing(false);
           last.current = null;
+          velocity.current.x = 0;
+          velocity.current.y = 0;
+          document.body.style.cursor = "";
         }}
       >
         {/* Lights */}
@@ -326,7 +458,7 @@ export default function ThreeBlob({
         <group ref={groupRef} scale={scale}>
           <BlobMesh
             color={dark ? "#ffb457" : "#ff8f3f"}
-            paused={paused}
+            paused={paused ?? false}
             imageSrc={imageSrc}
           />
 
@@ -339,15 +471,20 @@ export default function ThreeBlob({
               baseColor={pinColor}
               draggingRef={dragging}
               onNavigate={onNavigate}
+              onHoverChange={handlePinHoverChange}
             />
           ))}
         </group>
 
         {/* Inertia after drag release */}
-        <InertiaDriver
+        <RotationDriver
           groupRef={groupRef}
           draggingRef={dragging}
-          velRef={vel}
+          paused={paused ?? false}
+          velocity={velocity}
+          targetRotation={targetRotation}
+          idleTimer={idleTimer}
+          hoveredPin={hoveredPin}
         />
 
         {/* Studio look */}

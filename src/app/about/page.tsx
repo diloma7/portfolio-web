@@ -4,19 +4,17 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import BackgroundFX from "@/components/BackgroundFX";
-import Header from "@/components/Header";
+// import BackgroundFX from "@/components/BackgroundFX";
+// import Header from "@/components/Header";
 
 export default function About() {
   return (
     <>
-      <Header />
-
       <section
         className="relative min-h-[100svh] flex items-center"
         aria-label="Hero"
       >
-        <BackgroundFX />
+        {/* <BackgroundFX /> */}
 
         <div className="container max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
           {/* Left */}
@@ -37,7 +35,7 @@ export default function About() {
                 className="bg-gradient-to-r from-sky-400 via-violet-400 to-rose-400 bg-clip-text text-transparent animate-gradient"
                 whileHover={{ letterSpacing: "0.02em" }}
               >
-                Your Name
+                Diloma Ouattara
               </motion.span>
               .
             </motion.h1>
@@ -48,8 +46,8 @@ export default function About() {
               transition={{ delay: 0.1, duration: 0.45, ease: "easeOut" }}
               className="mt-4 text-lg text-muted-foreground max-w-prose"
             >
-              I craft accessible, performant web apps with TypeScript, React,
-              and delightful UX.
+              I craft inclusive, high-performing web experiences with
+              TypeScript, React, and thoughtful product strategy.
             </motion.p>
 
             {/* CTAs */}
@@ -80,7 +78,7 @@ export default function About() {
         </div>
 
         {/* Scroll cue */}
-        <div className="pointer-events-none absolute bottom-50 left-0 right-0 flex justify-center">
+        <div className="pointer-events-none absolute bottom-24 left-0 right-0 flex justify-center">
           <Link
             href="#about"
             aria-label="Scroll to next section"

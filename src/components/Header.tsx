@@ -57,13 +57,12 @@ export default function Header() {
   const pathname = usePathname();
   const isMdUp = useBreakpoint("(min-width: 768px)");
 
-  return (
+  return pathname != "/" ? (
     <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur flex items-center justify-center">
       <Container className="flex h-16 items-center justify-between">
         <Link href="/" className="font-bold text-lg">
-          YourName.dev
+          Diloma.dev
         </Link>
-
         {/* Render exactly ONE of the navs */}
         {isMdUp === null ? (
           // During hydration on first paint, avoid layout jump: show nothing (icons remain on the left)
@@ -164,5 +163,5 @@ export default function Header() {
         )}
       </Container>
     </header>
-  );
+  ) : null;
 }

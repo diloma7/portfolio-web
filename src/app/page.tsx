@@ -1,72 +1,48 @@
-// import Hero from "@/components/Hero";
-// import Section from "@/components/Section";
-// import Container from "@/components/Container";
-// import { Button } from "@/components/ui/button";
-// import Link from "next/link";
-// import SplashGate from "@/components/SplashGate";
+"use client";
 
-// export default function HomePage() {
-//   return (
-//     <>
-//       <SplashGate minDuration={3000} oncePerSession={false}>
-//         <Hero />
-//         <Section as="section">
-//           <Container id="about">
-//             <h2 className="text-2xl md:text-3xl font-semibold">What I Do</h2>
-//             <p className="mt-3 text-muted-foreground max-w-3xl">
-//               I design and build web applications with clean architectures,
-//               delightful interactions, and solid accessibility.
-//             </p>
-//             <div className="mt-6">
-//               <Link href="/projects">
-//                 <Button>Explore my work</Button>
-//               </Link>
-//             </div>
-//           </Container>
-//         </Section>
-
-//         <Section>
-//           <Container>
-//             <h2 className="text-2xl md:text-3xl font-semibold">Highlights</h2>
-//             <ul className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-//               <li className="rounded-2xl border p-6">
-//                 Performance-first engineering
-//               </li>
-//               <li className="rounded-2xl border p-6">
-//                 Accessible UI and semantics
-//               </li>
-//               <li className="rounded-2xl border p-6">DX and maintainability</li>
-//             </ul>
-//           </Container>
-//         </Section>
-//       </SplashGate>
-//     </>
-//   );
-// }
+import { motion, useTransform } from "framer-motion";
 
 import SplashGate from "@/components/SplashGate";
 import ThreeBlob from "@/components/ThreeBlob";
 import ThreeParticlesBackground from "@/components/ThreeParticlesBackground";
+import { useSplashProgress } from "@/lib/splash-context";
+
+function LandingExperience() {
+  const { progress } = useSplashProgress();
+
+  const revealOpacity = useTransform(progress, [0, 1], [0, 1]);
+  const revealScale = useTransform(progress, [0, 1], [0.96, 1]);
+  const revealY = useTransform(progress, [0, 1], [32, 0]);
+  const revealBlur = useTransform(progress, [0, 1], ["24px", "0px"]);
+
+  return (
+    <>
+      <ThreeParticlesBackground progress={progress} />
+      <motion.main
+        aria-label="Landing"
+        className="relative z-10 grid min-h-[calc(50svh-4rem)] place-items-center items-start px-4 pt-8 md:pt-12"
+        style={{
+          opacity: revealOpacity,
+          scale: revealScale,
+          y: revealY,
+          filter: revealBlur,
+        }}
+      >
+        <ThreeBlob
+          className="h-[min(78vh,900px)] w-[min(96vw,1400px)]"
+          dark
+          imageSrc="/earth.jpg"
+          scale={0.58}
+        />
+      </motion.main>
+    </>
+  );
+}
 
 export default function HomePage() {
   return (
-    <>
-      <ThreeParticlesBackground />
-
-      <SplashGate minDuration={3000} oncePerSession={false}>
-        <main
-          className="min-h-[calc(50svh-4rem)] items-start pt-8 md:pt-12 grid place-items-center px-4"
-          aria-label="Landing"
-        >
-          {/* Full-bleed canvas area (responsive) */}
-          <ThreeBlob
-            className="h-[min(78vh,900px)] w-[min(96vw,1400px)]"
-            dark
-            imageSrc="/earth.jpg"
-            scale={1.1} // ⬅️ make the sphere noticeably larger
-          />
-        </main>
-      </SplashGate>
-    </>
+    <SplashGate minDuration={3000} oncePerSession={false}>
+      <LandingExperience />
+    </SplashGate>
   );
 }

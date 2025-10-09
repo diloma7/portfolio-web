@@ -3,6 +3,8 @@ import "./globals.css";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "next-themes";
 import BackgroundFX from "@/components/BackgroundFX";
+import Header from "@/components/Header";
+import ThreeParticlesBackground from "@/components/ThreeParticlesBackground";
 
 export const metadata: Metadata = {
   title: {
@@ -34,19 +36,18 @@ export default function RootLayout({
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <BackgroundFX />
-
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
           ></a>
           <div className="relative z-10 flex min-h-screen flex-col">
+            <Header />
             <main
               id="main-content"
-              className="flex flex-col items-center justify-center "
+              // className="flex flex-col items-center justify-center "
             >
               {children}
             </main>
-            <Footer />
           </div>
         </ThemeProvider>
       </body>

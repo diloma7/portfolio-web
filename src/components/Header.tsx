@@ -20,6 +20,7 @@ import {
 
 const nav: NavLink[] = [
   { label: "Home", href: "/" },
+  // { label: "About Me", href: "/about" },
   { label: "Projects", href: "/projects" },
   { label: "Contact", href: "/contact" },
 ];
@@ -57,7 +58,7 @@ export default function Header() {
   const pathname = usePathname();
   const isMdUp = useBreakpoint("(min-width: 768px)");
 
-  return pathname != "/" ? (
+  return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur flex items-center justify-center">
       <Container className="flex h-16 items-center justify-between">
         <Link href="/" className="font-bold text-lg">
@@ -163,5 +164,5 @@ export default function Header() {
         )}
       </Container>
     </header>
-  ) : null;
+  );
 }

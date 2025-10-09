@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Footer from "@/components/Footer";
 import { ThemeProvider } from "next-themes";
 import BackgroundFX from "@/components/BackgroundFX";
 import Header from "@/components/Header";
-import ThreeParticlesBackground from "@/components/ThreeParticlesBackground";
 
 export const metadata: Metadata = {
   title: {

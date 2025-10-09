@@ -15,7 +15,7 @@ function LandingExperience() {
 
 export default function HomePage() {
   return (
-    <SplashGate minDuration={3000} oncePerSession={false}>
+    <SplashGate minDuration={3000} oncePerSession={true}>
       <LandingExperience />
       <LandingMainPage />
     </SplashGate>

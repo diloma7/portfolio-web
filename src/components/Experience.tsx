@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Briefcase, Calendar } from "lucide-react";
@@ -49,19 +49,147 @@ const Experience = () => {
     },
   ];
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!sectionRef.current) return;
+
     const ctx = gsap.context(() => {
-      gsap.from(".experience-item", {
-        scrollTrigger: {
-          trigger: ".experience-item",
-          start: "top 80%",
-        },
-        opacity: 0,
-        x: -100,
-        duration: 0.8,
-        stagger: 0.3,
-        ease: "power3.out",
+      const reduce = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+      // Title (shared)
+      gsap.fromTo(
+        ".experience-title",
+        { autoAlpha: 0, y: 24 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.75,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".experience-title",
+            start: "top 85%",
+            end: "bottom 70%",
+            toggleActions: "play reverse play reverse",
+          },
+        }
+      );
+
+      // Initial state (shared)
+      gsap.set(".experience-item", {
+        autoAlpha: 0,
+        y: 28,
+        willChange: "transform, opacity",
       });
+
+      // Responsive animation rules
+      ScrollTrigger.matchMedia({
+        // Small + medium: behave like Contact (simple fade-up batch)
+        "(max-width: 1023px)": function () {
+          ScrollTrigger.batch(".experience-item", {
+            start: "top 90%",
+            end: "top 30%",
+            onEnter: (batch) =>
+              gsap.to(batch, {
+                autoAlpha: 1,
+                y: 0,
+                duration: 0.6,
+                ease: "power3.out",
+                stagger: 0.1,
+                overwrite: "auto",
+              }),
+            onLeaveBack: (batch) =>
+              gsap.to(batch, {
+                autoAlpha: 0,
+                y: 28,
+                duration: 0.45,
+                ease: "power2.out",
+                stagger: 0.08,
+                overwrite: "auto",
+              }),
+          });
+        },
+
+        // Large and up: keep your alternating timeline, but smoother and more precise
+        "(min-width: 1024px)": function () {
+          // Grow the central rail
+          gsap.set(".exp-rail-grow", {
+            scaleY: 0,
+            autoAlpha: 0,
+            transformOrigin: "50% 0%",
+          });
+          ScrollTrigger.create({
+            trigger: ".exp-list",
+            start: "top 85%",
+            end: "bottom 15%",
+            toggleActions: "play reverse play reverse",
+            onEnter: () =>
+              gsap.to(".exp-rail-grow", {
+                autoAlpha: 1,
+                scaleY: 1,
+                duration: 0.8,
+                ease: "power2.out",
+              }),
+            onLeaveBack: () =>
+              gsap.to(".exp-rail-grow", {
+                autoAlpha: 0,
+                scaleY: 0,
+                duration: 0.5,
+                ease: "power2.inOut",
+              }),
+          });
+
+          // Alternating reveal per item (very light x drift to preserve the feel)
+          const items = gsap.utils.toArray<HTMLElement>(".experience-item");
+          items.forEach((item, i) => {
+            const fromX = i % 2 === 0 ? -24 : 24; // subtle, not 100px
+            gsap.fromTo(
+              item,
+              { autoAlpha: 0, y: 28, x: fromX },
+              {
+                autoAlpha: 1,
+                y: 0,
+                x: 0,
+                duration: 0.65,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: item,
+                  start: "top 88%",
+                  end: "top 25%",
+                  toggleActions: "play reverse play reverse",
+                },
+                overwrite: "auto",
+              }
+            );
+          });
+
+          // Marker pulse when each item enters view
+          ScrollTrigger.batch(".exp-marker", {
+            start: "top 88%",
+            onEnter: (batch) =>
+              gsap.fromTo(
+                batch,
+                { scale: 0.9, filter: "brightness(0.9)" },
+                {
+                  scale: 1,
+                  filter: "brightness(1)",
+                  duration: 0.3,
+                  ease: "power2.out",
+                  stagger: 0.08,
+                }
+              ),
+          });
+        },
+      });
+
+      ScrollTrigger.config({ ignoreMobileResize: true });
+
+      // Accuracy after fonts/assets
+      const refresh = () => ScrollTrigger.refresh();
+      window.addEventListener("load", refresh);
+      if (document.fonts?.ready) document.fonts.ready.then(refresh);
+
+      if (reduce) ScrollTrigger.disable(false); // still allows toggling states without motion
     }, sectionRef);
 
     return () => ctx.revert();
@@ -71,59 +199,84 @@ const Experience = () => {
     <section
       id="experience"
       ref={sectionRef}
-      className="min-h-screen flex items-center py-20 px-6 bg-slate-900/50"
+      className="min-h-screen flex items-center py-16 md:py-20 px-4 sm:px-6 bg-slate-900/50"
     >
-      <div className="max-w-4xl mx-auto w-full">
-        <h2 className="text-5xl md:text-6xl font-bold mb-16 text-center">
+      <div className="max-w-5xl lg:max-w-6xl mx-auto w-full">
+        <h2 className="experience-title text-4xl md:text-5xl lg:text-6xl font-bold mb-12 md:mb-16 text-center">
           <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
             Experience
           </span>
         </h2>
 
-        <div className="relative">
-          <div className="absolute left-0 md:left-1/2 transform md:-translate-x-1/2 h-full w-0.5 bg-gradient-to-b from-cyan-500 to-blue-500" />
+        <div className="relative exp-list">
+          {/* Central rail (lg+) */}
+          <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-px">
+            <div className="h-full w-px bg-slate-800/50" />
+            <div className="exp-rail-grow absolute inset-0 bg-gradient-to-b from-cyan-500/60 to-blue-500/50" />
+          </div>
 
-          <div className="space-y-12">
-            {experiences.map((exp, index) => (
-              <div
-                key={index}
-                className={`experience-item relative ${
-                  index % 2 === 0 ? "md:pr-12" : "md:pl-12 md:ml-auto"
-                } md:w-1/2`}
-              >
-                <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 hover:border-cyan-500 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/20">
-                  <div className="absolute left-0 md:left-1/2 top-6 transform -translate-x-1/2 w-4 h-4 bg-cyan-500 rounded-full border-4 border-slate-950" />
+          <div className="space-y-6 md:space-y-8">
+            {experiences.map((exp, index) => {
+              const leftSide = index % 2 === 0;
+              return (
+                <div
+                  key={index}
+                  className={[
+                    "experience-item relative transform-gpu",
+                    // Mobile/tablet: full width
+                    "lg:w-1/2",
+                    // Large screens: alternate sides
+                    leftSide ? "lg:pr-10 lg:mr-auto" : "lg:pl-10 lg:ml-auto",
+                  ].join(" ")}
+                  style={{ willChange: "transform, opacity" }}
+                >
+                  {/* Marker (lg+) */}
+                  <div
+                    className={[
+                      "exp-marker hidden lg:block absolute top-7 h-3 w-3 rounded-full",
+                      "bg-gradient-to-r from-cyan-400 to-blue-500",
+                      "shadow-[0_0_0_4px_rgba(34,211,238,0.15)]",
+                      leftSide ? "right-[-7px]" : "left-[-7px]",
+                    ].join(" ")}
+                    aria-hidden
+                  />
 
-                  <div className="flex items-center gap-2 text-cyan-400 mb-2">
-                    <Briefcase size={20} />
-                    <h3 className="text-xl font-bold">{exp.role}</h3>
-                  </div>
+                  <article className="bg-slate-950/70 backdrop-blur p-5 md:p-6 rounded-2xl border border-slate-800/70 transition-transform hover:-translate-y-[2px]">
+                    <header className="flex items-center gap-2 text-cyan-400 mb-2">
+                      <Briefcase size={18} />
+                      <h3 className="text-lg md:text-xl font-semibold">
+                        {exp.role}
+                      </h3>
+                    </header>
 
-                  <div className="text-slate-300 font-semibold mb-2">
-                    {exp.company}
-                  </div>
+                    <div className="text-slate-300 font-medium mb-1.5">
+                      {exp.company}
+                    </div>
 
-                  <div className="flex items-center gap-2 text-slate-400 mb-4">
-                    <Calendar size={16} />
-                    <span className="text-sm">{exp.period}</span>
-                  </div>
+                    <div className="flex items-center gap-2 text-slate-400 mb-3">
+                      <Calendar size={16} />
+                      <span className="text-xs md:text-sm">{exp.period}</span>
+                    </div>
 
-                  <p className="text-slate-400 mb-4">{exp.description}</p>
+                    <p className="text-slate-400 mb-4 text-sm md:text-base leading-relaxed">
+                      {exp.description}
+                    </p>
 
-                  <ul className="space-y-2">
-                    {exp.achievements.map((achievement, i) => (
-                      <li
-                        key={i}
-                        className="text-slate-400 flex items-start gap-2"
-                      >
-                        <span className="text-cyan-400 mt-1">•</span>
-                        <span>{achievement}</span>
-                      </li>
-                    ))}
-                  </ul>
+                    <ul className="grid gap-2">
+                      {exp.achievements.map((achievement, i) => (
+                        <li
+                          key={i}
+                          className="text-slate-400 text-sm md:text-[0.95rem] leading-relaxed flex gap-2"
+                        >
+                          <span className="text-cyan-400 mt-[2px]">•</span>
+                          <span>{achievement}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

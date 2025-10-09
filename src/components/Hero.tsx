@@ -4,10 +4,24 @@ import gsap from "gsap";
 import { Github, Linkedin, Mail, Code2 } from "lucide-react";
 import MyBackgroundInfo from "@/components/MyInfo";
 import Experience from "./Experience";
+import { usePathname, useRouter } from "next/navigation";
 
 const HeroComponent = () => {
   const heroRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const router = useRouter();
 
+  // --- Helper: navigate to a section on this page, or go to route + hash ---
+  const goToSection = (id: string, routePath: string) => {
+    const onThisPage = pathname === routePath || routePath === "/";
+    if (onThisPage) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    // Navigate to route with hash; the target page should auto-scroll on mount (effect below)
+    router.push(`${routePath}`);
+  };
   useEffect(() => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline();
@@ -106,22 +120,16 @@ const HeroComponent = () => {
 
           <div className="hero-cta flex gap-4 justify-center mb-12">
             <button
-              onClick={() =>
-                document
-                  .getElementById("projects")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 hover:scale-105"
+              type="button"
+              onClick={() => goToSection("projects", "/projects")}
+              className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-500"
             >
               View My Work
             </button>
             <button
-              onClick={() =>
-                document
-                  .getElementById("contact")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="px-8 py-4 border-2 border-cyan-500 rounded-full font-semibold hover:bg-cyan-500/10 transition-all duration-300"
+              type="button"
+              onClick={() => goToSection("contact", "/contact")}
+              className="px-8 py-4 border-2 border-cyan-500 rounded-full font-semibold hover:bg-cyan-500/10 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-500"
             >
               Get In Touch
             </button>

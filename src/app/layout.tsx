@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import BackgroundFX from "@/components/BackgroundFX";
 import Header from "@/components/Header";
+import FloatingActionButton from "@/components/FloatingActionButton";
 
 export const metadata: Metadata = {
   title: {
@@ -46,6 +47,7 @@ export default function RootLayout({
             >
               {children}
             </main>
+            <FloatingActionButton />
           </div>
         </ThemeProvider>
       </body>

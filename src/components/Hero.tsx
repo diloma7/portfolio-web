@@ -5,6 +5,7 @@ import { Github, Linkedin, Mail, Code2 } from "lucide-react";
 import MyBackgroundInfo from "@/components/MyInfo";
 import Experience from "./Experience";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 
 const HeroComponent = () => {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -103,9 +104,21 @@ const HeroComponent = () => {
         </div>
 
         <div className="max-w-4xl mx-auto text-center z-10">
-          <h1 className="hero-title text-6xl md:text-8xl font-bold mb-6">
+          <div className="mb-6 flex justify-center">
+            <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-500/20">
+              <Image
+                src="/Ali.jpg"
+                alt="Diloma Ouattara"
+                fill
+                sizes="(min-width: 768px) 8rem, 6rem" // md: 128px, else 96px
+                className="object-cover"
+                priority
+              />
+            </div>
+          </div>
+          <h1 className="hero-title text-5xl md:text-6xl font-bold mb-6">
             <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-              Software Developer
+              DILOMA OUATTARA
             </span>
           </h1>
 

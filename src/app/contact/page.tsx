@@ -1,61 +1,48 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Mail, MapPin, Phone, Send } from "lucide-react";
+import PageCurtain from "@/components/PageCurtain";
+
+// ✅ zod + react-hook-form (shadcn form)
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 gsap.registerPlugin(ScrollTrigger);
 
-/* ---------- Page Curtain (inline) ---------- */
-function PageCurtain({ duration = 0.35 }: { duration?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const reduce = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
+// === Validation schema (adjust copy rules as you like) ===
+const ContactSchema = z.object({
+  name: z.string().min(2, "Please enter at least 2 characters."),
+  email: z.string().email("Please enter a valid email address."),
+  message: z.string().min(10, "Please enter at least 10 characters."),
+});
 
-    if (reduce) {
-      el.style.opacity = "0";
-      el.style.display = "none";
-      return;
-    }
-
-    gsap.set(el, { opacity: 1 });
-    gsap.to(el, {
-      opacity: 0,
-      duration,
-      ease: "power2.out",
-      onComplete: () => {
-        el.style.display = "none";
-        try {
-          ScrollTrigger.refresh();
-        } catch {}
-      },
-    });
-  }, [duration]);
-
-  return (
-    <div
-      ref={ref}
-      aria-hidden="true"
-      className="fixed inset-0 z-[9999] bg-slate-950"
-      style={{ opacity: 1 }}
-    />
-  );
-}
+type ContactValues = z.infer<typeof ContactSchema>;
 
 const Contact = () => {
   const sectionRef = useRef<HTMLElement>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: "",
+
+  // === react-hook-form setup (no visual changes) ===
+  const form = useForm<ContactValues>({
+    resolver: zodResolver(ContactSchema),
+    defaultValues: { name: "", email: "", message: "" },
+    mode: "onTouched",
   });
 
-  // === improved intro + scroll from earlier, unchanged except for the curtain refresh ===
+  // === GSAP intro + scroll (unchanged) ===
   useLayoutEffect(() => {
     if (!sectionRef.current) return;
 
@@ -137,7 +124,6 @@ const Contact = () => {
 
     const doRefresh = () => ScrollTrigger.refresh();
     window.addEventListener("load", doRefresh);
-
     if (document.fonts?.ready) document.fonts.ready.then(doRefresh);
 
     return () => {
@@ -146,10 +132,10 @@ const Contact = () => {
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Form submitted:", formData);
-    setFormData({ name: "", email: "", message: "" });
+  // === Submit handler ===
+  const onSubmit = (values: ContactValues) => {
+    console.log("Form submitted:", values);
+    form.reset();
   };
 
   return (
@@ -168,77 +154,101 @@ const Contact = () => {
         </h2>
 
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
-          <form
-            onSubmit={handleSubmit}
-            className="contact-form space-y-5 md:space-y-6 bg-slate-900/60 backdrop-blur rounded-2xl p-5 md:p-6 border border-slate-800/70 transform-gpu"
-            style={{ willChange: "transform, opacity" }}
-          >
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-semibold mb-2"
-              >
-                Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/60 focus:border-cyan-500 transition-shadow"
-                required
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-semibold mb-2"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/60 focus:border-cyan-500 transition-shadow"
-                required
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="message"
-                className="block text-sm font-semibold mb-2"
-              >
-                Message
-              </label>
-              <textarea
-                id="message"
-                rows={5}
-                value={formData.message}
-                onChange={(e) =>
-                  setFormData({ ...formData, message: e.target.value })
-                }
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/60 focus:border-cyan-500 transition-shadow resize-none"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full px-8 py-3.5 md:py-4 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg font-semibold transition-transform duration-300 flex items-center justify-center gap-2 transform-gpu hover:translate-y-[-2px] focus:outline-none focus:ring-2 focus:ring-cyan-500/60 motion-reduce:transform-none"
+          {/* === shadcn Form wrapper, preserves your classes === */}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="contact-form space-y-5 md:space-y-6 bg-slate-900/60 backdrop-blur rounded-2xl p-5 md:p-6 border border-slate-800/70 transform-gpu"
+              style={{ willChange: "transform, opacity" }}
+              noValidate
             >
-              <Send size={18} />
-              <span>Send Message</span>
-            </button>
-          </form>
+              {/* Name */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel
+                      htmlFor="name"
+                      className="block text-sm font-semibold mb-2"
+                    >
+                      Name
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        id="name"
+                        type="text"
+                        {...field}
+                        className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/60 focus:border-cyan-500 transition-shadow"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-400 text-xs mt-1" />
+                  </FormItem>
+                )}
+              />
 
+              {/* Email */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel
+                      htmlFor="email"
+                      className="block text-sm font-semibold mb-2"
+                    >
+                      Email
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        id="email"
+                        type="email"
+                        {...field}
+                        className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/60 focus:border-cyan-500 transition-shadow"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-400 text-xs mt-1" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Message */}
+              <FormField
+                control={form.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel
+                      htmlFor="message"
+                      className="block text-sm font-semibold mb-2"
+                    >
+                      Message
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        id="message"
+                        rows={5}
+                        {...field}
+                        className="w-full px-4 py-3 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/60 focus:border-cyan-500 transition-shadow resize-none"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-400 text-xs mt-1" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Keep your original gradient button to preserve look */}
+              <button
+                type="submit"
+                className="w-full px-8 py-3.5 md:py-4 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg font-semibold transition-transform duration-300 flex items-center justify-center gap-2 transform-gpu hover:translate-y-[-2px] focus:outline-none focus:ring-2 focus:ring-cyan-500/60 motion-reduce:transform-none"
+              >
+                <Send size={18} />
+                <span>Send Message</span>
+              </button>
+            </form>
+          </Form>
+
+          {/* Contact info column (unchanged) */}
           <div className="contact-info space-y-5 md:space-y-6">
             <div className="contact-info-item bg-slate-900/70 p-5 md:p-6 rounded-xl border border-slate-800/70 transition-colors">
               <div className="flex items-start gap-4">
@@ -259,7 +269,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Phone</h3>
-                  <p className="text-slate-400">+1 (555) 123-4567</p>
+                  <p className="text-slate-400">+27 76 0801489</p>
                 </div>
               </div>
             </div>
@@ -271,7 +281,9 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Location</h3>
-                  <p className="text-slate-400">San Francisco, CA</p>
+                  <p className="text-slate-400">
+                    Ruimsig, Roodepoort, South Africa
+                  </p>
                 </div>
               </div>
             </div>

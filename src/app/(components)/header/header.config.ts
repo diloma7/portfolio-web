@@ -15,4 +15,10 @@ export const socials: SocialLink[] = [
     iconName: "Linkedin",
   },
   { label: "Mail", href: "mailto:you@example.com", iconName: "Mail" },
+  {
+    label: "Download CV",
+    href: "/diloma-ouattara-cv.pdf",
+    iconName: "FileDown",
+    download: true,
+  },
 ];

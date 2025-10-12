@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, Github, Linkedin, Mail } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -18,10 +18,6 @@ import {
 import Container from "./Container";
 import { nav, socials } from "@/app/(components)/header/header.config";
 import SocialIcon from "@/app/(components)/header/SocialIcons";
-// import ThemeToggle from "./ThemeToggle"; // optional
-// NEW: import types/data/icon
-// import { nav, socials } from "./header.config";
-// import SocialIcon from "./SocialIcon";
 
 export default function Header() {
   const pathname = usePathname();
@@ -96,7 +92,7 @@ export default function Header() {
           ))}
 
           {/* Right cluster */}
-          <div className="ml-2 flex items-center gap-5 pl-2 border-l">
+          {/* <div className="ml-2 flex items-center gap-5 pl-2 border-l">
             {socials.map((s) => (
               <Link
                 key={s.href}
@@ -110,13 +106,13 @@ export default function Header() {
               >
                 <SocialIcon name={s.iconName} />
               </Link>
-            ))}
-            {/* <ThemeToggle /> */}
-            {/* Optional CTA button – uncomment if you want a “Resume” / “Hire me” */}
-            <Button size="sm" className="hidden lg:inline-flex">
+            ))} */}
+          {/* <ThemeToggle /> */}
+          {/* Optional CTA button – uncomment if you want a “Resume” / “Hire me” */}
+          {/* <Button size="sm" className="hidden lg:inline-flex">
               Resume
             </Button>
-          </div>
+          </div> */}
         </nav>
 
         {/* Mobile: Menu button */}

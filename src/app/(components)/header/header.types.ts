@@ -4,10 +4,11 @@ export type NavLink = {
   href: string;
 };
 
-export type SocialIconName = "Github" | "Linkedin" | "Mail";
+export type SocialIconName = "Github" | "Linkedin" | "Mail" | "FileDown";
 
 export type SocialLink = {
   label: string;
   href: string;
   iconName: SocialIconName;
+  download?: boolean;
 };

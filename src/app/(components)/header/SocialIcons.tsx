@@ -1,7 +1,6 @@
 // app/(components)/header/SocialIcon.tsx
 "use client";
-
-import { Github, Linkedin, Mail } from "lucide-react";
+import { FileDown, Github, Linkedin, Mail } from "lucide-react";
 import type { SocialIconName } from "./header.types";
 
 type Props = { name: SocialIconName; className?: string };
@@ -13,6 +12,7 @@ const ICONS: Record<
   Github,
   Linkedin,
   Mail,
+  FileDown,
 };
 
 export default function SocialIcon({ name, className }: Props) {

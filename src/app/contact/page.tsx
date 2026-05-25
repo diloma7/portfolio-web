@@ -1,13 +1,12 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Send, Loader2, CheckCircle2 } from "lucide-react";
 import PageCurtain from "@/components/PageCurtain";
 
 // ✅ zod + react-hook-form (shadcn form)
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -20,20 +19,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-gsap.registerPlugin(ScrollTrigger);
-
-// === Validation schema (adjust copy rules as you like) ===
-const ContactSchema = z.object({
-  name: z.string().min(2, "Please enter at least 2 characters."),
-  email: z.string().email("Please enter a valid email address."),
-  message: z.string().min(10, "Please enter at least 10 characters."),
-});
-
-type ContactValues = z.infer<typeof ContactSchema>;
+import { ContactSchema, type ContactValues } from "@/lib/schemas";
+import { useGsapContext } from "@/hooks/useGsapContext";
 
 const Contact = () => {
   const sectionRef = useRef<HTMLElement>(null);
+  const [status, setStatus] = useState<
+    "idle" | "sending" | "success" | "error"
+  >("idle");
 
   // === react-hook-form setup (no visual changes) ===
   const form = useForm<ContactValues>({
@@ -42,100 +35,91 @@ const Contact = () => {
     mode: "onTouched",
   });
 
-  // === GSAP intro + scroll (unchanged) ===
-  useLayoutEffect(() => {
-    if (!sectionRef.current) return;
+  useGsapContext(sectionRef, (reduce) => {
+    if (!reduce) {
+      gsap.set([".contact-title", ".contact-form", ".contact-info-item"], {
+        autoAlpha: 0,
+        y: 24,
+      });
 
-    const ctx = gsap.context(() => {
-      const reduce = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
+      const infoInView = gsap.utils
+        .toArray<HTMLElement>(".contact-info-item")
+        .filter(
+          (el) => el.getBoundingClientRect().top < window.innerHeight - 60,
+        )
+        .slice(0, 2);
 
-      if (!reduce) {
-        gsap.set([".contact-title", ".contact-form", ".contact-info-item"], {
+      gsap
+        .timeline({ defaults: { ease: "power3.out" } })
+        .to(".contact-title", { autoAlpha: 1, y: 0, duration: 0.7 })
+        .to(".contact-form", { autoAlpha: 1, y: 0, duration: 0.65 }, "-=0.25")
+        .to(
+          infoInView,
+          { autoAlpha: 1, y: 0, duration: 0.55, stagger: 0.08 },
+          "-=0.25",
+        );
+    }
+
+    gsap.set([".contact-form", ".contact-info-item"], {
+      willChange: "transform, opacity",
+    });
+
+    ScrollTrigger.batch(".contact-form", {
+      start: "top 85%",
+      end: "top 30%",
+      onEnter: (els) =>
+        gsap.to(els, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.65,
+          ease: "power3.out",
+        }),
+      onLeaveBack: (els) =>
+        gsap.to(els, {
           autoAlpha: 0,
           y: 24,
-        });
+          duration: 0.45,
+          ease: "power2.out",
+        }),
+    });
 
-        const infoInView = gsap.utils
-          .toArray<HTMLElement>(".contact-info-item")
-          .filter(
-            (el) => el.getBoundingClientRect().top < window.innerHeight - 60
-          )
-          .slice(0, 2);
-
-        gsap
-          .timeline({ defaults: { ease: "power3.out" } })
-          .to(".contact-title", { autoAlpha: 1, y: 0, duration: 0.7 })
-          .to(".contact-form", { autoAlpha: 1, y: 0, duration: 0.65 }, "-=0.25")
-          .to(
-            infoInView,
-            { autoAlpha: 1, y: 0, duration: 0.55, stagger: 0.08 },
-            "-=0.25"
-          );
-      }
-
-      gsap.set([".contact-form", ".contact-info-item"], {
-        willChange: "transform, opacity",
-      });
-
-      ScrollTrigger.batch(".contact-form", {
-        start: "top 85%",
-        end: "top 30%",
-        onEnter: (els) =>
-          gsap.to(els, {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.65,
-            ease: "power3.out",
-          }),
-        onLeaveBack: (els) =>
-          gsap.to(els, {
-            autoAlpha: 0,
-            y: 24,
-            duration: 0.45,
-            ease: "power2.out",
-          }),
-      });
-
-      ScrollTrigger.batch(".contact-info-item", {
-        start: "top 90%",
-        end: "top 30%",
-        onEnter: (batch) =>
-          gsap.to(batch, {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.55,
-            ease: "power3.out",
-            stagger: 0.1,
-          }),
-        onLeaveBack: (batch) =>
-          gsap.to(batch, {
-            autoAlpha: 0,
-            y: 24,
-            duration: 0.4,
-            ease: "power2.out",
-            stagger: 0.08,
-          }),
-      });
-
-      ScrollTrigger.config({ ignoreMobileResize: true });
-    }, sectionRef);
-
-    const doRefresh = () => ScrollTrigger.refresh();
-    window.addEventListener("load", doRefresh);
-    if (document.fonts?.ready) document.fonts.ready.then(doRefresh);
-
-    return () => {
-      window.removeEventListener("load", doRefresh);
-      ctx.revert();
-    };
-  }, []);
+    ScrollTrigger.batch(".contact-info-item", {
+      start: "top 90%",
+      end: "top 30%",
+      onEnter: (batch) =>
+        gsap.to(batch, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.55,
+          ease: "power3.out",
+          stagger: 0.1,
+        }),
+      onLeaveBack: (batch) =>
+        gsap.to(batch, {
+          autoAlpha: 0,
+          y: 24,
+          duration: 0.4,
+          ease: "power2.out",
+          stagger: 0.08,
+        }),
+    });
+  });
 
   // === Submit handler ===
-  const onSubmit = (values: ContactValues) => {
-    console.log("Form submitted:", values);
-    form.reset();
+  const onSubmit = async (values: ContactValues) => {
+    setStatus("sending");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setStatus("success");
+      form.reset();
+    } catch {
+      setStatus("error");
+    }
   };
 
   return (
@@ -240,11 +224,40 @@ const Contact = () => {
               {/* Keep your original gradient button to preserve look */}
               <button
                 type="submit"
-                className="w-full px-8 py-3.5 md:py-4 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg font-semibold transition-transform duration-300 flex items-center justify-center gap-2 transform-gpu hover:translate-y-[-2px] focus:outline-none focus:ring-2 focus:ring-cyan-500/60 motion-reduce:transform-none"
+                disabled={status === "sending"}
+                className="w-full px-8 py-3.5 md:py-4 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg font-semibold transition-transform duration-300 flex items-center justify-center gap-2 transform-gpu hover:translate-y-[-2px] focus:outline-none focus:ring-2 focus:ring-cyan-500/60 motion-reduce:transform-none disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
-                <Send size={18} />
-                <span>Send Message</span>
+                {status === "sending" ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Sending…</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} />
+                    <span>Send Message</span>
+                  </>
+                )}
               </button>
+
+              {status === "success" && (
+                <div className="flex items-center gap-2 text-emerald-400 text-sm mt-2">
+                  <CheckCircle2 size={16} />
+                  <span>Message sent! I&apos;ll get back to you soon.</span>
+                </div>
+              )}
+
+              {status === "error" && (
+                <p className="text-red-400 text-sm mt-2">
+                  Something went wrong. Please try emailing me directly at{" "}
+                  <a
+                    href="mailto:dilomaouattara7@gmail.com"
+                    className="underline hover:text-red-300"
+                  >
+                    dilomaouattara7@gmail.com
+                  </a>
+                </p>
+              )}
             </form>
           </Form>
 
@@ -257,7 +270,9 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Email</h3>
-                  <p className="text-slate-400 break-all">hello@example.com</p>
+                  <p className="text-slate-400 break-all">
+                    dilomaouattara7@gmail.com
+                  </p>
                 </div>
               </div>
             </div>

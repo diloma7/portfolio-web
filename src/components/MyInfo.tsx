@@ -1,146 +1,139 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Code2, Rocket, Users } from "lucide-react";
-
-gsap.registerPlugin(ScrollTrigger);
+import { useGsapContext } from "@/hooks/useGsapContext";
 
 const About = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
 
-  useLayoutEffect(() => {
-    if (!sectionRef.current) return;
+  useGsapContext(sectionRef, () => {
+    // ---------- TITLE ----------
+    gsap.fromTo(
+      ".about-title",
+      { autoAlpha: 0, y: 32 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.9,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".about-title",
+          start: "top 85%",
+          end: "bottom 60%",
+          toggleActions: "play reverse play reverse", // bidirectional
+        },
+      },
+    );
 
-    const ctx = gsap.context(() => {
-      // ---------- TITLE ----------
-      gsap.fromTo(
-        ".about-title",
-        { autoAlpha: 0, y: 32 },
-        {
-          autoAlpha: 1,
-          y: 0,
-          duration: 0.9,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: ".about-title",
-            start: "top 85%",
-            end: "bottom 60%",
-            toggleActions: "play reverse play reverse", // bidirectional
-          },
-        }
+    // ---------- WORD-BY-WORD PARAGRAPHS ----------
+    if (textRef.current) {
+      const paragraphs = Array.from(
+        textRef.current.querySelectorAll<HTMLParagraphElement>("p"),
       );
 
-      // ---------- WORD-BY-WORD PARAGRAPHS ----------
-      if (textRef.current) {
-        const paragraphs = Array.from(
-          textRef.current.querySelectorAll<HTMLParagraphElement>("p")
-        );
+      // Wrap words once (client-side only)
+      paragraphs.forEach((p) => {
+        if (p.dataset.wrapped === "true") return; // idempotent
+        const txt = p.textContent || "";
+        const words = txt.split(/\s+/).filter(Boolean);
 
-        // Wrap words once (client-side only)
-        paragraphs.forEach((p) => {
-          if (p.dataset.wrapped === "true") return; // idempotent
-          const txt = p.textContent || "";
-          const words = txt.split(/\s+/).filter(Boolean);
+        // Give a perspective container to make rotateX smooth
+        p.style.perspective = "800px";
+        p.style.perspectiveOrigin = "50% 50%";
+        p.style.transformStyle = "preserve-3d";
 
-          // Give a perspective container to make rotateX smooth
-          p.style.perspective = "800px";
-          p.style.perspectiveOrigin = "50% 50%";
-          p.style.transformStyle = "preserve-3d";
-
-          p.innerHTML = words
-            .map(
-              (w) =>
-                `<span class="word-wrap inline-block align-top overflow-hidden will-change-transform">
+        p.innerHTML = words
+          .map(
+            (w) =>
+              `<span class="word-wrap inline-block align-top overflow-hidden will-change-transform">
                    <span class="word inline-block will-change-transform">${w}&nbsp;</span>
-                 </span>`
-            )
-            .join("");
+                 </span>`,
+          )
+          .join("");
 
-          p.dataset.wrapped = "true";
-        });
-
-        // Batch each paragraph's words (fewer triggers)
-        paragraphs.forEach((p) => {
-          const wordEls = p.querySelectorAll<HTMLElement>(".word");
-          gsap.set(wordEls, {
-            autoAlpha: 0,
-            y: 24,
-            rotateX: -75,
-            transformOrigin: "50% 100%",
-          });
-
-          ScrollTrigger.create({
-            trigger: p,
-            start: "top 85%",
-            end: "top 20%",
-            toggleActions: "play reverse play reverse", // bidirectional
-            onEnter: () =>
-              gsap.to(wordEls, {
-                autoAlpha: 1,
-                y: 0,
-                rotateX: 0,
-                duration: 0.7,
-                ease: "power2.out",
-                stagger: 0.02,
-                overwrite: "auto",
-              }),
-            onLeaveBack: () =>
-              gsap.to(wordEls, {
-                autoAlpha: 0,
-                y: 24,
-                rotateX: -75,
-                duration: 0.45,
-                ease: "power2.out",
-                stagger: 0.015,
-                overwrite: "auto",
-              }),
-          });
-        });
-      }
-
-      // ---------- FEATURE CARDS (right column) ----------
-      // Set once to avoid layout thrash
-      gsap.set(".about-card", {
-        autoAlpha: 0,
-        y: 36,
-        scale: 0.98,
-        willChange: "transform, opacity",
+        p.dataset.wrapped = "true";
       });
 
-      ScrollTrigger.batch(".about-card", {
-        start: "top 88%",
-        end: "top 25%",
-        onEnter: (batch) =>
-          gsap.to(batch, {
-            autoAlpha: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.7,
-            ease: "back.out(1.3)",
-            stagger: 0.12,
-            overwrite: "auto",
-          }),
-        onLeaveBack: (batch) =>
-          gsap.to(batch, {
-            autoAlpha: 0,
-            y: 36,
-            scale: 0.98,
-            duration: 0.45,
-            ease: "power2.out",
-            stagger: 0.08,
-            overwrite: "auto",
-          }),
+      // Batch each paragraph's words (fewer triggers)
+      paragraphs.forEach((p) => {
+        const wordEls = p.querySelectorAll<HTMLElement>(".word");
+        gsap.set(wordEls, {
+          autoAlpha: 0,
+          y: 24,
+          rotateX: -75,
+          transformOrigin: "50% 100%",
+        });
+
+        ScrollTrigger.create({
+          trigger: p,
+          start: "top 85%",
+          end: "top 20%",
+          toggleActions: "play reverse play reverse", // bidirectional
+          onEnter: () =>
+            gsap.to(wordEls, {
+              autoAlpha: 1,
+              y: 0,
+              rotateX: 0,
+              duration: 0.7,
+              ease: "power2.out",
+              stagger: 0.02,
+              overwrite: "auto",
+            }),
+          onLeaveBack: () =>
+            gsap.to(wordEls, {
+              autoAlpha: 0,
+              y: 24,
+              rotateX: -75,
+              duration: 0.45,
+              ease: "power2.out",
+              stagger: 0.015,
+              overwrite: "auto",
+            }),
+        });
       });
+    }
 
-      // Be less twitchy on mobile resizes
-      ScrollTrigger.config({ ignoreMobileResize: true });
-    }, sectionRef);
+    // ---------- FEATURE CARDS (right column) ----------
+    // Set once to avoid layout thrash
+    gsap.set(".about-card", {
+      autoAlpha: 0,
+      y: 36,
+      scale: 0.98,
+      willChange: "transform, opacity",
+    });
 
-    return () => ctx.revert();
-  }, []);
+    ScrollTrigger.batch(".about-card", {
+      start: "top 88%",
+      end: "top 25%",
+      onEnter: (batch) =>
+        gsap.to(batch, {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.7,
+          ease: "back.out(1.3)",
+          stagger: 0.12,
+          overwrite: "auto",
+        }),
+      onLeaveBack: (batch) =>
+        gsap.to(batch, {
+          autoAlpha: 0,
+          y: 36,
+          scale: 0.98,
+          duration: 0.45,
+          ease: "power2.out",
+          stagger: 0.08,
+          overwrite: "auto",
+        }),
+    });
+
+    // Be less twitchy on mobile resizes
+    ScrollTrigger.config({ ignoreMobileResize: true });
+  });
 
   return (
     <section
@@ -160,16 +153,33 @@ const About = () => {
           {/* TEXT: constrain width for readability */}
           <div ref={textRef} className="about-text max-w-prose">
             <p className="text-base md:text-lg text-slate-300 mb-6 leading-relaxed">
-              I&apos;m a passionate software developer with expertise in
-              building scalable web applications. With a strong foundation in
-              both frontend and backend technologies, I bring ideas to life
-              through clean, efficient code.
+              I&apos;m a full-stack developer focused on building secure,
+              scalable, and data-driven applications. My work sits at the
+              intersection of frontend engineering, backend systems, and
+              authentication architecture, with a strong emphasis on designing
+              systems that are both robust and maintainable.
             </p>
-            <p className="text-base md:text-lg text-slate-300 leading-relaxed">
-              My journey in software development has equipped me with the skills
-              to tackle complex challenges and deliver solutions that make a
-              difference. I&apos;m constantly learning and adapting to new
-              technologies to stay at the forefront of the industry.
+
+            <p className="text-base md:text-lg text-slate-300 mb-6 leading-relaxed">
+              I have hands-on experience working with modern technologies such
+              as Next.js, React, and ASP.NET Core, alongside databases like
+              MongoDB and SQL Server. I build applications with a focus on
+              performance, clean architecture, and efficient data handling.
+            </p>
+
+            <p className="text-base md:text-lg text-slate-300 mb-6 leading-relaxed">
+              A key area of my work is authentication and security, including
+              JWT-based systems, OTP verification flows, and protected
+              application routing. I also develop data-intensive interfaces,
+              such as dynamic grids and reporting systems, commonly used in
+              enterprise environments.
+            </p>
+
+            <p className="text-base md:text-lg text-slate-300 mb-6 leading-relaxed">
+              I approach development with a strong focus on problem-solving,
+              system design, and long-term scalability. Rather than just
+              implementing features, I aim to build systems that are reliable,
+              extensible, and aligned with real-world use cases.
             </p>
           </div>
 

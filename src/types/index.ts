@@ -1,21 +1,24 @@
-// export type Project = {
-//   id: string;
-//   title: string;
-//   description: string;
-//   tags: string[];
-//   href?: string;
-//   imageAlt: string;
-//   imageSrc?: string; // optional: could be a placeholder or remote image
-// };
 export type Project = {
+  slug: string;
   title: string;
   description: string;
-  tech: string[];
-  gradient: string; // tailwind gradient tokens, e.g. "from-cyan-500 to-blue-500"
+
+  // Detail page fields
+  problem?: string;
+  approach?: string;
+  challenges?: string[];
+  results?: string[];
+
+  // UI fields
+  href?: string;
+  imageSrc?: string;
+  alt?: string;
+
+  // rename for UI consistency
+  tags: string[];
+
+  // styling
+  gradient: string;
 };
 
-export type ContactFormData = {
-  name: string;
-  email: string;
-  message: string;
-};
+// ContactValues is exported from @/lib/schemas (Zod-inferred)

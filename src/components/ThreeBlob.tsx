@@ -8,7 +8,7 @@ import {
   Html,
   useTexture,
 } from "@react-three/drei";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
@@ -27,7 +27,7 @@ function BlobMesh({
   imageSrc?: string;
 }) {
   const mesh = useRef<THREE.Mesh>(null!);
-  const geometry = useMemo(() => new THREE.SphereGeometry(1.2, 128, 128), []);
+  const geometry = useMemo(() => new THREE.SphereGeometry(1.2, 48, 48), []);
   const texture = useTexture(imageSrc ?? "") as THREE.Texture | undefined;
 
   const material = useMemo(() => {
@@ -57,7 +57,7 @@ function BlobMesh({
   // Cache original positions for wobble
   const original = useMemo(
     () => geometry.attributes.position.array.slice(0) as Float32Array,
-    [geometry]
+    [geometry],
   );
 
   useFrame(({ clock }) => {
@@ -92,7 +92,7 @@ type MenuItem = { label: string; href: string; theta: number; phi: number };
 function atSphere(
   r: number,
   theta: number, // azimuth around Y (radians)
-  phi: number // polar from +Y (0..π)
+  phi: number, // polar from +Y (0..π)
 ): [number, number, number] {
   const x = r * Math.sin(phi) * Math.cos(theta);
   const y = r * Math.cos(phi);
@@ -244,20 +244,20 @@ function RotationDriver({
         velocity.current.x,
         0,
         3.4,
-        delta
+        delta,
       );
       velocity.current.y = THREE.MathUtils.damp(
         velocity.current.y,
         0,
         3.4,
-        delta
+        delta,
       );
 
       targetRotation.current.y += velocity.current.x * delta;
       targetRotation.current.x = THREE.MathUtils.clamp(
         targetRotation.current.x + velocity.current.y * delta,
         -0.9,
-        0.9
+        0.9,
       );
 
       const nearlyStill =
@@ -272,7 +272,7 @@ function RotationDriver({
           targetRotation.current.x +
             Math.cos(idleTimer.current * 0.5) * delta * 0.18,
           -0.6,
-          0.6
+          0.6,
         );
       } else {
         idleTimer.current = 0;
@@ -286,13 +286,13 @@ function RotationDriver({
       rotation.y,
       targetRotation.current.y,
       6,
-      delta
+      delta,
     );
     rotation.x = THREE.MathUtils.damp(
       rotation.x,
       targetRotation.current.x,
       6,
-      delta
+      delta,
     );
   });
 
@@ -312,7 +312,10 @@ export default function ThreeBlob({
   imageSrc?: string;
   scale?: number;
 }) {
-  const prefersReducedMotion = useReducedMotion();
+  const prefersReducedMotion =
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false;
 
   const router = useRouter();
 
@@ -344,7 +347,7 @@ export default function ThreeBlob({
         phi: Math.PI * 0.5,
       },
     ],
-    []
+    [],
   );
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
@@ -369,7 +372,7 @@ export default function ThreeBlob({
     const dy = e.clientY - last.current.y;
     const dt = Math.max(
       (e.nativeEvent.timeStamp - last.current.time) / 1000,
-      0.016
+      0.016,
     );
     const yawDelta = dx * 0.0025;
     const pitchDelta = dy * 0.0025;
@@ -378,7 +381,7 @@ export default function ThreeBlob({
     targetRotation.current.x = THREE.MathUtils.clamp(
       targetRotation.current.x + pitchDelta,
       -0.9,
-      0.9
+      0.9,
     );
 
     velocity.current.x = yawDelta / dt;

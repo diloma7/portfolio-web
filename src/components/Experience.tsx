@@ -1,199 +1,184 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Briefcase, Calendar } from "lucide-react";
-
-gsap.registerPlugin(ScrollTrigger);
+import { useGsapContext } from "@/hooks/useGsapContext";
 
 const Experience = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   const experiences = [
     {
-      role: "Senior Full Stack Developer",
-      company: "Tech Innovations Inc.",
-      period: "2022 - Present",
+      role: "Full-Stack Developer (Project-Based)",
+      company: "Independent / Personal Projects",
+      period: "2024 - Present",
       description:
-        "Leading development of cloud-native applications, mentoring junior developers, and architecting scalable solutions.",
+        "Designing and building full-stack applications with a focus on security, authentication systems, and scalable architecture.",
       achievements: [
-        "Reduced application load time by 60%",
-        "Led team of 5 developers",
-        "Implemented CI/CD pipeline",
+        "Built a digital identity platform using Next.js, Node.js, and MongoDB",
+        "Implemented secure authentication systems with JWT and OTP verification",
+        "Designed protected routing and session management for web applications",
+        "Integrated Cloudinary for media storage and management",
       ],
     },
     {
-      role: "Full Stack Developer",
-      company: "Digital Solutions Ltd.",
-      period: "2020 - 2022",
+      role: "Frontend & Backend Developer",
+      company: "Enterprise Data Systems (Project Work)",
+      period: "2023 - 2024",
       description:
-        "Developed and maintained multiple client projects, focusing on responsive web applications and API integrations.",
+        "Developed data-intensive interfaces and backend services for handling structured datasets and reporting workflows.",
       achievements: [
-        "Built 10+ production applications",
-        "Improved code coverage to 85%",
-        "Mentored 3 junior developers",
+        "Built dynamic data grids using React and KendoReact",
+        "Integrated ASP.NET Core APIs with SQL Server databases",
+        "Implemented loading states and optimized async data handling",
+        "Migrated legacy Razor views to modern React architecture",
       ],
     },
     {
-      role: "Frontend Developer",
-      company: "StartUp Ventures",
-      period: "2018 - 2020",
+      role: "Software Developer (Learning & Automation)",
+      company: "Self-Directed / Training",
+      period: "2022 - 2023",
       description:
-        "Created responsive user interfaces and collaborated with design team to deliver pixel-perfect implementations.",
+        "Focused on building foundational skills in full-stack development, automation, and problem-solving using modern programming tools.",
       achievements: [
-        "Redesigned company website",
-        "Increased user engagement by 40%",
-        "Implemented design system",
+        "Developed Python scripts for task automation and data processing",
+        "Worked with SQL Server for data querying and validation",
+        "Built authentication flows including password reset and token validation",
+        "Strengthened debugging, code structure, and algorithm design skills",
       ],
     },
   ];
 
-  useLayoutEffect(() => {
-    if (!sectionRef.current) return;
+  useGsapContext(sectionRef, (reduce) => {
+    // Title (shared)
+    gsap.fromTo(
+      ".experience-title",
+      { autoAlpha: 0, y: 24 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.75,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".experience-title",
+          start: "top 85%",
+          end: "bottom 70%",
+          toggleActions: "play reverse play reverse",
+        },
+      },
+    );
 
-    const ctx = gsap.context(() => {
-      const reduce = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
+    // Initial state (shared)
+    gsap.set(".experience-item", {
+      autoAlpha: 0,
+      y: 28,
+      willChange: "transform, opacity",
+    });
 
-      // Title (shared)
-      gsap.fromTo(
-        ".experience-title",
-        { autoAlpha: 0, y: 24 },
-        {
-          autoAlpha: 1,
-          y: 0,
-          duration: 0.75,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: ".experience-title",
-            start: "top 85%",
-            end: "bottom 70%",
-            toggleActions: "play reverse play reverse",
-          },
-        }
-      );
+    // Responsive animation rules
+    ScrollTrigger.matchMedia({
+      // Small + medium: behave like Contact (simple fade-up batch)
+      "(max-width: 1023px)": function () {
+        ScrollTrigger.batch(".experience-item", {
+          start: "top 90%",
+          end: "top 30%",
+          onEnter: (batch) =>
+            gsap.to(batch, {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.6,
+              ease: "power3.out",
+              stagger: 0.1,
+              overwrite: "auto",
+            }),
+          onLeaveBack: (batch) =>
+            gsap.to(batch, {
+              autoAlpha: 0,
+              y: 28,
+              duration: 0.45,
+              ease: "power2.out",
+              stagger: 0.08,
+              overwrite: "auto",
+            }),
+        });
+      },
 
-      // Initial state (shared)
-      gsap.set(".experience-item", {
-        autoAlpha: 0,
-        y: 28,
-        willChange: "transform, opacity",
-      });
+      // Large and up: keep your alternating timeline, but smoother and more precise
+      "(min-width: 1024px)": function () {
+        // Grow the central rail
+        gsap.set(".exp-rail-grow", {
+          scaleY: 0,
+          autoAlpha: 0,
+          transformOrigin: "50% 0%",
+        });
+        ScrollTrigger.create({
+          trigger: ".exp-list",
+          start: "top 85%",
+          end: "bottom 15%",
+          toggleActions: "play reverse play reverse",
+          onEnter: () =>
+            gsap.to(".exp-rail-grow", {
+              autoAlpha: 1,
+              scaleY: 1,
+              duration: 0.8,
+              ease: "power2.out",
+            }),
+          onLeaveBack: () =>
+            gsap.to(".exp-rail-grow", {
+              autoAlpha: 0,
+              scaleY: 0,
+              duration: 0.5,
+              ease: "power2.inOut",
+            }),
+        });
 
-      // Responsive animation rules
-      ScrollTrigger.matchMedia({
-        // Small + medium: behave like Contact (simple fade-up batch)
-        "(max-width: 1023px)": function () {
-          ScrollTrigger.batch(".experience-item", {
-            start: "top 90%",
-            end: "top 30%",
-            onEnter: (batch) =>
-              gsap.to(batch, {
-                autoAlpha: 1,
-                y: 0,
-                duration: 0.6,
-                ease: "power3.out",
-                stagger: 0.1,
-                overwrite: "auto",
-              }),
-            onLeaveBack: (batch) =>
-              gsap.to(batch, {
-                autoAlpha: 0,
-                y: 28,
-                duration: 0.45,
+        // Alternating reveal per item (very light x drift to preserve the feel)
+        const items = gsap.utils.toArray<HTMLElement>(".experience-item");
+        items.forEach((item, i) => {
+          const fromX = i % 2 === 0 ? -24 : 24; // subtle, not 100px
+          gsap.fromTo(
+            item,
+            { autoAlpha: 0, y: 28, x: fromX },
+            {
+              autoAlpha: 1,
+              y: 0,
+              x: 0,
+              duration: 0.65,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: item,
+                start: "top 88%",
+                end: "top 25%",
+                toggleActions: "play reverse play reverse",
+              },
+              overwrite: "auto",
+            },
+          );
+        });
+
+        // Marker pulse when each item enters view
+        ScrollTrigger.batch(".exp-marker", {
+          start: "top 88%",
+          onEnter: (batch) =>
+            gsap.fromTo(
+              batch,
+              { scale: 0.9, filter: "brightness(0.9)" },
+              {
+                scale: 1,
+                filter: "brightness(1)",
+                duration: 0.3,
                 ease: "power2.out",
                 stagger: 0.08,
-                overwrite: "auto",
-              }),
-          });
-        },
+              },
+            ),
+        });
+      },
+    });
 
-        // Large and up: keep your alternating timeline, but smoother and more precise
-        "(min-width: 1024px)": function () {
-          // Grow the central rail
-          gsap.set(".exp-rail-grow", {
-            scaleY: 0,
-            autoAlpha: 0,
-            transformOrigin: "50% 0%",
-          });
-          ScrollTrigger.create({
-            trigger: ".exp-list",
-            start: "top 85%",
-            end: "bottom 15%",
-            toggleActions: "play reverse play reverse",
-            onEnter: () =>
-              gsap.to(".exp-rail-grow", {
-                autoAlpha: 1,
-                scaleY: 1,
-                duration: 0.8,
-                ease: "power2.out",
-              }),
-            onLeaveBack: () =>
-              gsap.to(".exp-rail-grow", {
-                autoAlpha: 0,
-                scaleY: 0,
-                duration: 0.5,
-                ease: "power2.inOut",
-              }),
-          });
-
-          // Alternating reveal per item (very light x drift to preserve the feel)
-          const items = gsap.utils.toArray<HTMLElement>(".experience-item");
-          items.forEach((item, i) => {
-            const fromX = i % 2 === 0 ? -24 : 24; // subtle, not 100px
-            gsap.fromTo(
-              item,
-              { autoAlpha: 0, y: 28, x: fromX },
-              {
-                autoAlpha: 1,
-                y: 0,
-                x: 0,
-                duration: 0.65,
-                ease: "power3.out",
-                scrollTrigger: {
-                  trigger: item,
-                  start: "top 88%",
-                  end: "top 25%",
-                  toggleActions: "play reverse play reverse",
-                },
-                overwrite: "auto",
-              }
-            );
-          });
-
-          // Marker pulse when each item enters view
-          ScrollTrigger.batch(".exp-marker", {
-            start: "top 88%",
-            onEnter: (batch) =>
-              gsap.fromTo(
-                batch,
-                { scale: 0.9, filter: "brightness(0.9)" },
-                {
-                  scale: 1,
-                  filter: "brightness(1)",
-                  duration: 0.3,
-                  ease: "power2.out",
-                  stagger: 0.08,
-                }
-              ),
-          });
-        },
-      });
-
-      ScrollTrigger.config({ ignoreMobileResize: true });
-
-      // Accuracy after fonts/assets
-      const refresh = () => ScrollTrigger.refresh();
-      window.addEventListener("load", refresh);
-      if (document.fonts?.ready) document.fonts.ready.then(refresh);
-
-      if (reduce) ScrollTrigger.disable(false); // still allows toggling states without motion
-    }, sectionRef);
-
-    return () => ctx.revert();
-  }, []);
+    if (reduce) ScrollTrigger.disable(false); // still allows toggling states without motion
+  });
 
   return (
     <section

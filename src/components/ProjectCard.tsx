@@ -22,7 +22,7 @@ export default function ProjectCard({ project }: Props) {
           {project.imageSrc && (
             <Image
               src={project.imageSrc}
-              alt={project.imageAlt}
+              alt={project.alt ?? project.title + " screenshot"}
               width={1200}
               height={630}
               className="h-48 w-full object-cover"

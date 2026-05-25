@@ -28,7 +28,6 @@ const HeroComponent = () => {
       const tl = gsap.timeline();
 
       tl.from(".hero-title", {
-        opacity: 0,
         y: 100,
         duration: 1,
         ease: "power4.out",
@@ -41,7 +40,7 @@ const HeroComponent = () => {
             duration: 0.8,
             ease: "power3.out",
           },
-          "-=0.5"
+          "-=0.5",
         )
         .from(
           ".hero-description",
@@ -51,7 +50,7 @@ const HeroComponent = () => {
             duration: 0.8,
             ease: "power3.out",
           },
-          "-=0.5"
+          "-=0.5",
         )
         .from(
           ".hero-cta",
@@ -61,7 +60,7 @@ const HeroComponent = () => {
             duration: 0.6,
             ease: "power2.out",
           },
-          "-=0.4"
+          "-=0.4",
         )
         .from(
           ".hero-social",
@@ -72,7 +71,7 @@ const HeroComponent = () => {
             stagger: 0.1,
             ease: "back.out(1.7)",
           },
-          "-=0.3"
+          "-=0.3",
         );
 
       gsap.to(".floating-icon", {
